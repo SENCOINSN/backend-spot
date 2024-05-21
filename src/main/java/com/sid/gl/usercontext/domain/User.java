@@ -1,5 +1,6 @@
 package com.sid.gl.usercontext.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sid.gl.sharedKernel.domain.AbstractAuditingEntity;
 import jakarta.persistence.*;
 
@@ -21,10 +22,45 @@ public class User extends AbstractAuditingEntity<Long> {
     @Column(name = "email")
     private String email;
 
+    @Column(name="password")
+    private String password;
+
+    @Column(name="username")
+    private String username;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    @JsonIgnore
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     private Subscription subscription = Subscription.FREE;
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @ManyToOne
+    @JoinColumn(name = "profile_id")
+    private Profil profile;
+
+    public Profil getProfile() {
+        return profile;
+    }
+
+    public void setProfile(Profil profile) {
+        this.profile = profile;
+    }
 
     public Long getId() {
         return id;

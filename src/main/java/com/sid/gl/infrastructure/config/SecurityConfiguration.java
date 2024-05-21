@@ -11,7 +11,12 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 */
 
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+
 //@Configuration
+
 public class SecurityConfiguration {
     /*@Bean
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {

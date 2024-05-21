@@ -7,8 +7,10 @@ import com.sid.gl.catalogcontext.dtos.ReadSongInfoDTO;
 import com.sid.gl.catalogcontext.dtos.SaveSongDTO;
 import com.sid.gl.catalogcontext.dtos.SongContentDTO;
 import com.sid.gl.infrastructure.service.State;
+import com.sid.gl.infrastructure.service.StatusNotification;
 import com.sid.gl.usercontext.application.UserService;
 import com.sid.gl.usercontext.dto.ReadUserDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
 import jakarta.validation.Validator;
@@ -84,13 +86,14 @@ public class SongResource {
     }
 
     @GetMapping("/songs/search")
-    public ResponseEntity<List<ReadSongInfoDTO>> search(@RequestParam String term) {
+    public ResponseEntity<List<ReadSongInfoDTO>> search(@RequestParam String term, HttpServletRequest request) {
         return ResponseEntity.ok(songService.search(term));
     }
 
-    /*@PostMapping("/songs/like")
-    public ResponseEntity<FavoriteSongDTO> addOrRemoveFromFavorite(@Valid @RequestBody FavoriteSongDTO favoriteSongDTO) {
-        ReadUserDTO userFromAuthentication = userService.getAuthenticatedUserFromSecurityContext();
+    @PostMapping("/songs/like")
+    public ResponseEntity<FavoriteSongDTO> addOrRemoveFromFavorite(@Valid @RequestBody FavoriteSongDTO favoriteSongDTO
+                                                                   ) {
+        ReadUserDTO userFromAuthentication = userService.getAuthenticatedUserFromSecurityContextV2();
         State<FavoriteSongDTO, String> favoriteSongResponse = songService.addOrRemoveFromFavorite(favoriteSongDTO, userFromAuthentication.email());
 
         if(favoriteSongResponse.getStatus().equals(StatusNotification.ERROR)) {
@@ -99,12 +102,12 @@ public class SongResource {
         } else {
             return ResponseEntity.ok(favoriteSongResponse.getValue());
         }
-    }*/
+    }
 
-    /*@GetMapping("/songs/like")
+    @GetMapping("/songs/like")
     public ResponseEntity<List<ReadSongInfoDTO>> fetchFavoriteSongs() {
-        ReadUserDTO userFromAuthentication = userService.getAuthenticatedUserFromSecurityContext();
+        ReadUserDTO userFromAuthentication = userService.getAuthenticatedUserFromSecurityContextV2();
         return ResponseEntity.ok(songService.fetchFavoriteSongs(userFromAuthentication.email()));
-    }*/
+    }
 
 }

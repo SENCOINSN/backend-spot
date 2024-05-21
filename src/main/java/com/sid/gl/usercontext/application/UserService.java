@@ -1,16 +1,30 @@
 package com.sid.gl.usercontext.application;
 
+import com.sid.gl.security.JwtService;
+import com.sid.gl.usercontext.domain.Profil;
 import com.sid.gl.usercontext.domain.User;
+import com.sid.gl.usercontext.dto.AuthRequestDTO;
+import com.sid.gl.usercontext.dto.JwtResponseDTO;
 import com.sid.gl.usercontext.dto.ReadUserDTO;
+import com.sid.gl.usercontext.dto.UserRequestDTO;
+import com.sid.gl.usercontext.helper.UserContext;
 import com.sid.gl.usercontext.mapper.UserMapper;
+import com.sid.gl.usercontext.repository.ProfileRepository;
 import com.sid.gl.usercontext.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /*import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;*/
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,9 +34,21 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper) {
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    private final ProfileRepository profileRepository;
+
+    private final JwtService jwtService;
+
+    private final AuthenticationManager authenticationManager;
+
+    public UserService(UserRepository userRepository, UserMapper userMapper, BCryptPasswordEncoder bCryptPasswordEncoder, ProfileRepository profileRepository, JwtService jwtService, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.profileRepository = profileRepository;
+        this.jwtService = jwtService;
+        this.authenticationManager = authenticationManager;
     }
 
     private void updateUser(User user) {
@@ -38,9 +64,68 @@ public class UserService {
         }
     }
 
-    /*public void syncWithIdp(OAuth2User oAuth2User) {
-        Map<String, Object> attributes = oAuth2User.getAttributes();
-        User user = mapOauth2AttributesToUser(attributes);
+
+    public ReadUserDTO register(UserRequestDTO userRequestDTO){
+       LOGGER.info("process register user {} ",userRequestDTO);
+
+      Optional<User> opUser = userRepository.findOneByEmail(userRequestDTO.email());
+      if(opUser.isPresent()){
+          LOGGER.info("User already exist for register");
+          throw new RuntimeException("user for register already exists");
+      }
+      String passH = bCryptPasswordEncoder.encode(userRequestDTO.password());
+      User user = userMapper.userRequestDTOToUser(userRequestDTO);
+      user.setPassword(passH);
+
+      Profil profil =  getOrcreateProfileIfNotExist("USER");
+      user.setProfile(profil);
+        User userSaved = userRepository.save(user);
+        return userMapper.readUserDTOToUser(userSaved);
+
+    }
+
+
+    public JwtResponseDTO login(AuthRequestDTO authRequestDTO){
+        try{
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequestDTO.getUsernameOrEmail(),
+                            authRequestDTO.getPassword())
+            );
+
+            if(authentication.isAuthenticated()){
+                LOGGER.info("successfully authenticated");
+                User user = userRepository.findByUsernameOrEmail(authRequestDTO.getUsernameOrEmail(), authRequestDTO.getUsernameOrEmail());
+                String tokenAccess = jwtService.GenerateToken(user.getUsername());
+                //RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+                JwtResponseDTO jwtResponseDTO = new JwtResponseDTO(tokenAccess,null,user);
+                return jwtResponseDTO;
+            }
+
+        }catch (BadCredentialsException e){
+            LOGGER.error("Failed Authentication");
+            throw new BadCredentialsException("Echec de connexion, les infos d'authentifications sont incorrectes !!");
+        }
+        return null;
+    }
+
+    private Profil getOrcreateProfileIfNotExist(String profileName){
+        Profil profile = profileRepository.findByProfileName(profileName);
+        if(profile ==null){
+            Profil profil = new Profil();
+            profil.setProfileName(profileName);
+            return profileRepository.save(profil);
+        }
+        return profile;
+    }
+
+
+
+
+
+
+    /*public void syncWithIdp(User user) {
+        *//*Map<String, Object> attributes = oAuth2User.getAttributes();
+        User user = mapOauth2AttributesToUser(attributes);*//*
         Optional<User> existingUser = userRepository.findOneByEmail(user.getEmail());
         if (existingUser.isPresent()) {
             if (attributes.get("updated_at") != null) {
@@ -60,11 +145,38 @@ public class UserService {
         }
     }*/
 
-   /* public ReadUserDTO getAuthenticatedUserFromSecurityContext() {
-        OAuth2User principal = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = mapOauth2AttributesToUser(principal.getAttributes());
+    public ReadUserDTO getAuthenticatedUserFromSecurityContext(HttpServletRequest request) {
+       String  userName = getUsername(request);
+       User user = userRepository.findByUsername(userName);
+
+       LOGGER.info("current user authenticated --{}",user);
+       return userMapper.readUserDTOToUser(user);
+    }
+
+
+    public ReadUserDTO getAuthenticatedUserFromSecurityContextV2() {
+       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String userName = userDetails.getUsername();
+        User user = userRepository.findByUsername(userName);
+
+        LOGGER.info("current user authenticated --{}",user);
         return userMapper.readUserDTOToUser(user);
-    }*/
+    }
+
+    private String getUsername(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        String token;
+        String username;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+            username = jwtService.extractUsername(token);
+            LOGGER.info("extract username for claim {}", username);
+            return username;
+        }
+      return null;
+    }
+
 
     private User mapOauth2AttributesToUser(Map<String, Object> attributes) {
         User user = new User();
@@ -106,8 +218,8 @@ public class UserService {
         return oneByEmail.map(userMapper::readUserDTOToUser);
     }
 
-  /*  public boolean isAuthenticated() {
+   public boolean isAuthenticated() {
         return !SecurityContextHolder.getContext().getAuthentication().getPrincipal().equals("anonymousUser");
-    }*/
+    }
 
 }

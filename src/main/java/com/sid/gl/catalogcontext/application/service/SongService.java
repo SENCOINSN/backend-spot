@@ -74,16 +74,16 @@ public class SongService {
                 .map(songMapper::songToReadSongInfoDTO)
                 .toList();
 
-        /*if(userService.isAuthenticated()) {
+        if(userService.isAuthenticated()) {
             return fetchFavoritesStatusForSongs(allSongs);
-        }*/
+        }
        LOGGER.info("all songs {}",allSongs);
         return allSongs;
     }
 
 
-    /*private List<ReadSongInfoDTO> fetchFavoritesStatusForSongs(List<ReadSongInfoDTO> songs) {
-        ReadUserDTO authenticatedUser = userService.getAuthenticatedUserFromSecurityContext();
+    private List<ReadSongInfoDTO> fetchFavoritesStatusForSongs(List<ReadSongInfoDTO> songs) {
+        ReadUserDTO authenticatedUser = userService.getAuthenticatedUserFromSecurityContextV2();
 
         List<UUID> songPublicIds = songs.stream().map(ReadSongInfoDTO::getPublicId).toList();
 
@@ -96,7 +96,7 @@ public class SongService {
             }
         }).toList();
     }
-*/
+
     public List<ReadSongInfoDTO> fetchFavoriteSongs(String email) {
         return songRepository.findAllFavoriteByUserEmail(email)
                 .stream()
@@ -116,11 +116,11 @@ public class SongService {
                 .map(songMapper::songToReadSongInfoDTO)
                 .collect(Collectors.toList());
 
-        /*if(userService.isAuthenticated()) {
+        if(userService.isAuthenticated()) {
             return fetchFavoritesStatusForSongs(searchedSongs);
-        } else {*/
+        } else {
             return searchedSongs;
-        //}
+        }
     }
 
     public State<FavoriteSongDTO, String> addOrRemoveFromFavorite(FavoriteSongDTO favoriteSongDTO, String email) {

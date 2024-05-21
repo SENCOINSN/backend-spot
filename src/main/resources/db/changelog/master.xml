@@ -11,5 +11,10 @@
     <property name="datetimeType" value="datetime" dbms="postgresql"/>
 
     <include file="db/changelog/00000000000000_initial_schema.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/202405202_added_entity_profile.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/202405201_add_column_entity_user.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/202405203_added_constraint_entity_user.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/202405204_added_column_entity_user_username.xml" relativeToChangelogFile="false"/>
+
 
 </databaseChangeLog>
