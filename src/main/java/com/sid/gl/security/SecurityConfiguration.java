@@ -33,6 +33,7 @@ public class SecurityConfiguration {
 
     public static final String[] WIGHTLISTURL = new String[]{"/api/register",
             "/api/login",
+            "/api/get-authenticated-user",
             "api/songs",
             "api/songs/search",
             "/api/v1/login-by-otp",

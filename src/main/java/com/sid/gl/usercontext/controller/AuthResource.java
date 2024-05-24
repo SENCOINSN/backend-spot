@@ -81,9 +81,9 @@ public class AuthResource extends AbstractController {
     }
 
     @GetMapping("/get-authenticated-user")
-    public ResponseEntity<ReadUserDTO> getAuthenticatedUser() {
+    public ResponseEntity<ReadUserDTO> getAuthenticatedUser(HttpServletRequest request) {
             //userService.syncWithIdp(user);
-            ReadUserDTO userFromAuthentication = userService.getAuthenticatedUserFromSecurityContextV2();
+            ReadUserDTO userFromAuthentication = userService.getAuthenticatedUserFromSecurityContext(request);
             LOGGER.info("user from authentification {} ",userFromAuthentication);
             return ResponseEntity.ok().body(userFromAuthentication);
 

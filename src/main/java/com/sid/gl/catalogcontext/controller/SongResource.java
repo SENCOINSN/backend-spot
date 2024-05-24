@@ -86,7 +86,7 @@ public class SongResource {
     }
 
     @GetMapping("/songs/search")
-    public ResponseEntity<List<ReadSongInfoDTO>> search(@RequestParam String term, HttpServletRequest request) {
+    public ResponseEntity<List<ReadSongInfoDTO>> search(@RequestParam String term) {
         return ResponseEntity.ok(songService.search(term));
     }
 
